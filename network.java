@@ -1,68 +1,65 @@
 package pse2;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
-import java.net.InetAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.io.*;
+import java.net.*;
 import java.util.HashMap;
 
-class network{
-	static OutputStream bos = null;
-	static ObjectOutputStream oos = null;
-	static InputStream is = null;
-	static ObjectInputStream ois = null;
-	static HashMap<String, Integer> hm = null;
-	static Socket socket = null;
-	static InetAddress host = null;
-	static ServerSocket server = null;
-	static int port = 7777;
-	static boolean isServer = false; //got to be set to true if runnung as client
-	
-	static void OpenSocket() throws IOException{		
-		if (isServer){
-		server = new ServerSocket(port);
-		socket = server.accept(); 
-		}
-		else{
-		host = InetAddress.getLocalHost();
-		socket = new Socket(host.getHostName(), port);
+public class network {
+	static int DEFAULT_PORT = 1236;
+	static String host = "localhost"; //Localhost
+	public static void main(String args[]) throws ClassNotFoundException, IOException{
+		new Server(DEFAULT_PORT);
+		//new Client(host, DEFAULT_PORT);		
+	}	
+}
+
+class Server {
+	public Server(int port) throws ClassNotFoundException, IOException {
+		System.out.println("waiting for connections on port " + port);
+        ServerSocket servSock = new ServerSocket(port);
+        this.GetData(servSock);
+	}
+
+	public void SendData (){
+	}
+
+	@SuppressWarnings("unchecked")
+	public void GetData (ServerSocket servSock) throws IOException, ClassNotFoundException{
+		while (true) {	
+			Socket socket = servSock.accept();
+			InputStream is = socket.getInputStream();
+			InputStream bis = new BufferedInputStream( is );
+			ObjectInputStream ois = new ObjectInputStream( bis );
+         		       
+			HashMap<String, Integer> hm = (HashMap<String, Integer>) ois.readObject();
+        
+			ois.close();
+        
+			System.out.println( hm );
 		}
 	}
-	
-	static void SendData() throws IOException{
+}
+
+class Client {
+	public Client(String host, int port) throws IOException {
+		InetAddress ia = InetAddress.getByName(host);
+		Socket socket = new Socket(ia, port);
+		this.SendData(socket);
+	}
+
+	public void SendData (Socket socket) throws IOException{
 		HashMap<String, Integer> hm = new HashMap<String, Integer>();
 		hm.put( "One",new Integer(1) );
 		hm.put( "Two",new Integer(2) );
 		hm.put( "Three",new Integer(3) );
-		
-		bos = new BufferedOutputStream( socket.getOutputStream() );
-		oos = new ObjectOutputStream( bos );
+	  
+		BufferedOutputStream bos = new BufferedOutputStream( socket.getOutputStream() );
+		ObjectOutputStream oos = new ObjectOutputStream( bos );
+		  	 
 		oos.writeObject(hm);
 		oos.close();
 	}
-	
-	@SuppressWarnings("unchecked")
-	static void GetData() throws IOException, ClassNotFoundException{
-		is = socket.getInputStream();
-		InputStream bis = new BufferedInputStream( is );
-		ois = new ObjectInputStream( bis );
-        
-		hm = (HashMap<String, Integer>) ois.readObject();
-		ois.close();
-		is.close();
-		socket.close();
-		System.out.println("Message Received: " + hm);
-	}
-	
-	public static void main(String[] args) throws Exception {
-		OpenSocket();
-		SendData();
-		GetData();
+
+	public void GetData (){
 	}
 }
